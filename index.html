@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ゆびさきで秘密を</title>
+
+     <meta property="og:title" content="ゆびさきで秘密を">
+    <meta property="og:description" content="隠しきれない想いを、てのひらに綴って…。">
+    <meta property="og:image" content="https://lanchangame.github.io/tenohira/image.png">
+    <meta property="og:url" content="https://lanchangame.github.io/tenohira/">
+    <meta name="twitter:card" content="summary_large_image">
+
+    
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #3e2723;
+            touch-action: none;
+            font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'M PLUS Rounded 1c', 'Noto Serif JP', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100dvh;
+            max-height: 100%;
+            margin: 0 auto;
+            background-color: #FFF3E0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #FFE0B2; 
+        }
+        .screen.active { display: flex; }
+
+        #game-screen { background: none; }
+
+        #title-logo {
+            width: 85%;
+            max-width: 320px;
+            height: auto;
+            margin-bottom: 30px;
+        }
+
+        #badge-box {
+            background-color: rgba(255, 255, 255, 0.85);
+            border: 2px dashed #FFAB91; 
+            border-radius: 20px;
+            padding: 15px;
+            width: 80%;
+            margin-bottom: 30px;
+            box-sizing: border-box;
+        }
+        .badge-box-title {
+            color: #D84315;
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        #key-display {
+            text-align: center;
+            color: #D84315;
+            font-size: 14px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        #badge-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+        .badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background-color: #FFF;
+            border: 2px solid #FFE0B2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #FFCCBC;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .badge.unlocked {
+            background-color: #FF8A65;
+            border-color: #FF8A65;
+            color: #FFF;
+            transform: translateY(-2px);
+        }
+        .badge.unlocked-x {
+            background-color: #FFD54F;
+            border-color: #FFD54F;
+            color: #D84315;
+            transform: translateY(-2px);
+        }
+        .badge:active { transform: scale(0.9); }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 75%;
+            z-index: 5;
+            align-items: center; 
+        }
+        .menu-btn {
+            width: 220px; 
+            height: 55px;
+            background-color: #FF8A65;
+            border: none; 
+            border-radius: 30px;
+            color: #FFF;
+            font-size: 18px;
+            font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .menu-btn:active { transform: translateY(5px); }
+
+        .instruction-text {
+            color: #5D4037;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 20px 15px;
+            border-radius: 20px;
+            border: 2px dashed #FFAB91;
+            width: 85%;
+            font-size: 14px;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            box-sizing: border-box;
+        }
+        .instruction-text p { margin: 8px 0; font-weight: bold; }
+
+        #canvas-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #blush-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ff5252;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1;
+            transition: opacity 0.3s;
+        }
+
+        #draw-instruction, #gauge-label, #stroke-counter, #time-counter {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: #5D4037;
+            font-weight: bold;
+            z-index: 2;
+            display: none;
+            pointer-events: none;
+        }
+        #draw-instruction { top: 15px; font-size: 20px; letter-spacing: 2px; }
+        #gauge-label { top: 75px; font-size: 14px; }
+        #gauge-container {
+            position: absolute;
+            top: 100px; 
+            left: 10%;
+            width: 80%;
+            height: 14px;
+            background-color: #FFE0B2;
+            border: 3px solid #FFF;
+            border-radius: 10px;
+            z-index: 2;
+            display: none;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        #gauge-bar { width: 0%; height: 100%; background-color: #FF7043; transition: width 0.1s; }
+        #stroke-counter { top: 125px; font-size: 18px; }
+        #time-counter { top: 150px; font-size: 18px; }
+
+        #warning-text {
+            position: absolute;
+            top: 40%; 
+            width: 100%;
+            text-align: center;
+            color: #D84315;
+            font-size: 24px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #choice-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 249, 245, 0.9);
+            z-index: 4;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .choice-hint { color: #5D4037; margin-bottom: 25px; font-size: 15px; font-weight: bold; }
+
+            #message-box {
+            position: absolute;
+            bottom: 3%;
+            left: 5%;
+            right: 5%;
+            height: 40%;
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 3px solid #FFAB91; 
+            border-radius: 20px;
+            padding: 18px;
+            box-sizing: border-box;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            color: #5D4037;
+            cursor: pointer;
+        }
+            #message-text {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.8;
+            letter-spacing: 1px;
+            font-weight: bold;
+            white-space: pre-line;
+        }
+        .blink-triangle {
+            align-self: flex-end;
+            animation: blink 1s infinite;
+            font-size: 16px;
+            color: #FF8A65;
+        }
+        @keyframes blink { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+
+        #finish-btn {
+            position: absolute;
+            bottom: 35%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px; 
+            height: 55px;
+            background-color: #FF8A65;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            z-index: 4;
+            display: none;
+            font-family: inherit;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        #finish-btn:active { transform: translateX(-50%) translateY(5px); }
+
+        #day-transition {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #FF8A65;
+            color: #FFF;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 6px;
+            opacity: 0;
+            pointer-events: none; 
+            transition: opacity 1s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="title-screen" class="screen active">
+            <img src="title.png" alt="ゆびさきで秘密を" id="title-logo">
+            <div id="badge-box">
+                <div class="badge-box-title">獲得エンディングバッジ</div>
+                <div id="key-display">てのひらの鍵: 0 個</div>
+                <div id="badge-container"></div>
+            </div>
+            <div class="button-group">
+                <button class="menu-btn" onclick="showHowTo()">遊び方</button>
+                <button class="menu-btn" onclick="startGame()">はじめから</button>
+                <button class="menu-btn" onclick="window.open('https://marshmallow-qa.com/oj0afz3donoawsc', '_blank')">感想を送る</button>
+            </div>
+        </div>
+
+        <div id="how-to-screen" class="screen">
+            <img src="title.png" alt="ゆびさきで秘密を" id="title-logo" style="max-width: 200px; margin-bottom: 20px;">
+            <div class="instruction-text">
+                <p>ヴェインとランスロットのとある５日間。</p>
+                <p>・ 毎日、書きたい言葉を選びます。</p>
+                <p>・ 指で画面をなぞって、<strong>手を離した時</strong>に１画とカウントされます。</p>
+                <p>・ 時間内に目標画数を書き終えると成功！</p>
+                <p>・ 選択肢や成功率でエンディングが変化。</p>
+                <p>・ 点は1画にカウントされません。</p>
+                <p>エンディングは全部で10種類。全部ハッピーエンドなのでご安心ください！</p>
+                <p>🔑 同じエンディングに到達すると「てのひらの鍵」が手に入り、未解放エンディングをアンロックできます。</p>
+            </div>
+            <div class="button-group">
+                <button class="menu-btn" onclick="showTitle()">タイトルへ戻る</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen">
+            <div id="blush-overlay"></div>
+            <canvas id="canvas-layer"></canvas>
+            <div id="day-transition">１日目</div>
+            <div id="draw-instruction">てのひらに文字を書こう</div>
+            <div id="gauge-label">🐾 ヴェインのくすぐったいゲージ 🐾</div>
+            <div id="gauge-container"><div id="gauge-bar"></div></div>
+            <div id="stroke-counter">残り: 0 画</div>
+            <div id="time-counter">残り時間: 0.0秒</div>
+            <div id="warning-text">ふはっ、くすぐったい…</div>
+            <div id="choice-overlay">
+                <div class="choice-hint">てのひらになんと書こうか…</div>
+                <div class="button-group" id="choices-container"></div>
+            </div>
+            <button id="finish-btn" onclick="completeDrawPhase()">書き終える</button>
+            <div id="message-box">
+                <p id="message-text"></p>
+                <div class="blink-triangle" id="next-mark">▼</div>
+            </div>
+        </div>
+
+        <div id="custom-modal" class="screen" style="background-color: rgba(62, 39, 35, 0.8); z-index: 100;">
+            <div style="background-color: #FFF3E0; border: 3px dashed #FFAB91; border-radius: 20px; padding: 25px; width: 85%; max-width: 320px; box-sizing: border-box; text-align: center; color: #5D4037;">
+                <p id="modal-text" style="font-size: 15px; font-weight: bold; line-height: 1.6; margin-top: 0;"></p>
+                <div id="modal-buttons" style="display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas-layer');
+        const msgBox = document.getElementById('message-box');
+        const msgText = document.getElementById('message-text');
+        const nextMark = document.getElementById('next-mark');
+        const choiceOverlay = document.getElementById('choice-overlay');
+        const choicesContainer = document.getElementById('choices-container');
+        const finishBtn = document.getElementById('finish-btn');
+        const drawInstruction = document.getElementById('draw-instruction');
+        const gaugeLabel = document.getElementById('gauge-label');
+        const gaugeContainer = document.getElementById('gauge-container');
+        const gaugeBar = document.getElementById('gauge-bar');
+        const strokeCounter = document.getElementById('stroke-counter');
+        const timeCounter = document.getElementById('time-counter');
+        const warningText = document.getElementById('warning-text');
+        const blushOverlay = document.getElementById('blush-overlay');
+
+        let ctx = null;
+        let currentTextSequence = [];
+        let textCallback = null;
+        let phase = 'title';
+        let currentDayIdx = 0;
+        let playerAffection = 0;
+        let choiceHistory = [];
+        let timeRemaining = 0;
+        let tickleGauge = 0;
+        let warningEndTime = 0;
+        let lastTime = 0;
+        let isGameLoopRunning = false;
+        let rafId = null;
+        let currentChoice = null;
+        let runId = 0;
+        
+        let audioCtx = null;
+        let isAudioGraphBuilt = false;
+        let audioTickleNode = null;
+        let audioTickleFilter = null;
+        let audioTickleGain = null;
+        let audioTickleBuffer = null; 
+        
+        let isDrawing = false;
+        let currentStrokes = 0;
+        let lastX = 0;
+        let lastY = 0;
+        let pathDist = 0;
+        
+        function clearAllTimeouts() {
+            runId++;
+        }
+
+        function resetGameState() {
+            clearAllTimeouts();
+            playerAffection = 0;
+            currentDayIdx = 0;
+            choiceHistory = [];
+            tickleGauge = 0;
+            timeRemaining = 0;
+            warningEndTime = 0;
+            phase = 'title';
+            const transition = document.getElementById('day-transition');
+            if (transition) transition.style.opacity = '0';
+        }
+
+        function handleMsgClick() {
+            if (phase === 'text') advanceText();
+        }
+        let activeMsgHandler = handleMsgClick;
+        
+        msgBox.addEventListener('click', () => {
+            if (activeMsgHandler) activeMsgHandler();
+        });
+
+        function getSafeStorageNumber(key, defaultValue) {
+            const val = localStorage.getItem(key);
+            const num = parseInt(val, 10);
+            return isNaN(num) ? defaultValue : num;
+        }
+
+        function resizeCanvas() {
+            if(!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx = canvas.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        function playText(texts, onComplete) {
+            currentTextSequence = [...texts];
+            textCallback = onComplete;
+            phase = 'text';
+            if (msgBox) msgBox.style.display = 'flex';
+            advanceText();
+        }
+
+        function advanceText() {
+            if (currentTextSequence.length === 0) {
+                if (textCallback) {
+                    let cb = textCallback;
+                    textCallback = null;
+                    cb();
+                }
+                return;
+            }
+            msgText.textContent = currentTextSequence.shift();
+            if (nextMark) nextMark.style.display = currentTextSequence.length > 0 ? 'block' : 'none';
+        }
+
+        function stopLoop() {
+            isGameLoopRunning = false;
+            if (rafId) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+        }
+
+        function startLoop() {
+            stopLoop();
+            isGameLoopRunning = true;
+            lastTime = performance.now();
+            rafId = requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            stopLoop();
+            resetGameState();
+            initAudio();
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('game-screen').classList.add('active');
+            
+            resizeCanvas();
+            startLoop();
+            startDay();
+        }
+
+        function clearCanvas() {
+            if (ctx && canvas) {
+                ctx.save();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.fillStyle = '#FFF3E0';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+        }
+
+        function startDay() {
+            if (msgBox) msgBox.style.display = 'none'; 
+            clearCanvas(); 
+            const currentRun = runId;
+            
+            if (currentDayIdx >= dailyData.length) {
+                evaluateEnding();
+                return;
+            }
+            
+            phase = 'transition'; 
+            
+            const day = dailyData[currentDayIdx];
+            const transition = document.getElementById('day-transition');
+            if (transition) {
+                transition.innerText = day.label;
+                transition.style.opacity = '1';
+                
+                setTimeout(() => {
+                    if (currentRun !== runId) return;
+                    transition.style.opacity = '0';
+                    setTimeout(() => {
+                        if (currentRun !== runId) return;
+                        playText(day.intro, () => {
+                            if (currentRun !== runId) return;
+                            if (day.choices) showChoices(day.choices);
+                            else evaluateEnding(); 
+                        });
+                    }, 1000);
+                }, 2000);
+            }
+        }
+
+        function showChoices(choices) {
+            phase = 'choice';
+            if (choiceOverlay) choiceOverlay.style.display = 'flex';
+            if (choicesContainer) {
+                choicesContainer.innerHTML = '';
+                choices.forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = 'menu-btn';
+                    btn.innerText = c.text;
+                    btn.onclick = () => startDrawPhase(c);
+                    choicesContainer.appendChild(btn);
+                });
+            }
+        }
+
+        function startDrawPhase(choice) {
+            if (choiceOverlay) choiceOverlay.style.display = 'none';
+            if (msgBox) msgBox.style.display = 'none';
+            phase = 'draw';
+            tickleGauge = 0;
+            currentStrokes = 0; 
+            timeRemaining = (choice.req * 1500) + 2000;
+            warningEndTime = 0;
+            currentChoice = choice;
+            lastTime = performance.now();
+            
+            if (gaugeBar) gaugeBar.style.width = '0%';
+            if (blushOverlay) blushOverlay.style.opacity = '0';
+            
+            clearCanvas();
+            if (drawInstruction) {
+            drawInstruction.innerText = `てのひらに${choice.text}と書こう`;
+            drawInstruction.style.display = 'block';
+        }
+        
+        if (gaugeLabel) gaugeLabel.style.display = 'block';
+          
+            if (gaugeContainer) gaugeContainer.style.display = 'block';
+            if (strokeCounter) {
+                strokeCounter.style.display = 'block';
+                strokeCounter.innerText = `残り: ${choice.req} 画`;
+            }
+            if (timeCounter) timeCounter.style.display = 'block';
+            if (finishBtn) finishBtn.style.display = 'none'; 
+        }
+
+        function startDrawing(e) {
+            if (phase !== 'draw') return;
+            isDrawing = true;
+            canvas.setPointerCapture(e.pointerId);
+            
+            const rect = canvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+            pathDist = 0;
+            
+            if (audioCtx && audioTickleBuffer) {
+                stopAudioTickle();
+                audioTickleNode = audioCtx.createBufferSource();
+                audioTickleNode.buffer = audioTickleBuffer;
+                audioTickleNode.loop = true;
+                audioTickleNode.connect(audioTickleFilter);
+                audioTickleNode.start();
+            }
+        }
+
+        function draw(e) {
+            if (!isDrawing || phase !== 'draw') return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const dist = Math.hypot(x - lastX, y - lastY);
+            pathDist += dist;
+
+            if (ctx) {
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = '#D84315';
+                ctx.lineWidth = 6;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+            tickleGauge = Math.min(100, tickleGauge + (dist * 0.13));
+            lastX = x;
+            lastY = y;
+
+            if (tickleGauge >= 100) endDrawPhase(false);
+        }
+
+        function stopDrawing(e) {
+            if (!isDrawing || phase !== 'draw') return;
+            isDrawing = false;
+            canvas.releasePointerCapture(e.pointerId);
+            
+            stopAudioTickle();
+
+            if (pathDist > 15) {
+            currentStrokes++;
+            }
+            if (strokeCounter && currentChoice) {
+                const remain = Math.max(0, currentChoice.req - currentStrokes);
+                strokeCounter.innerText = `残り: ${remain} 画`;
+                if (currentStrokes >= currentChoice.req) {
+                    if (finishBtn) finishBtn.style.display = 'block';
+                }
+            }
+        }
+
+        function stopAudioTickle() {
+            if (audioTickleGain) audioTickleGain.gain.value = 0;
+            if (audioTickleNode) {
+                try { 
+                    audioTickleNode.stop(); 
+                    audioTickleNode.disconnect(); 
+                } catch(err) {}
+                audioTickleNode = null;
+            }
+        }
+
+        if (canvas) {
+            canvas.addEventListener('pointerdown', startDrawing);
+            canvas.addEventListener('pointermove', draw);
+            canvas.addEventListener('pointerup', stopDrawing);
+            canvas.addEventListener('pointercancel', stopDrawing);
+        }
+
+        function completeDrawPhase() {
+            if (currentChoice && currentStrokes >= currentChoice.req) {
+                endDrawPhase(true);
+            }
+        }
+
+        function endDrawPhase(success) {
+            phase = 'text';
+            if (drawInstruction) drawInstruction.style.display = 'none';
+            if (gaugeLabel) gaugeLabel.style.display = 'none';
+            if (gaugeContainer) gaugeContainer.style.display = 'none';
+            if (strokeCounter) strokeCounter.style.display = 'none';
+            if (timeCounter) timeCounter.style.display = 'none';
+            if (finishBtn) finishBtn.style.display = 'none';
+            if (blushOverlay) blushOverlay.style.opacity = '0';
+            
+            if (currentChoice) {
+                choiceHistory.push({ 
+                    diff: currentChoice.diff, 
+                    success: success,
+                    req: currentChoice.req,
+                    actual: currentStrokes,
+                    timestamp: performance.now()
+                });
+                if (success) playerAffection += currentChoice.reward;
+            }
+            
+            stopAudioTickle();
+            
+            const day = dailyData[currentDayIdx];
+            const texts = success ? day.success : day.fail;
+            
+            playText(texts || ["……"], () => {
+                currentDayIdx++;
+                startDay();
+            });
+        }
+
+        function showDynamicWarning(text, duration) {
+            const now = performance.now();
+            const currentRun = runId;
+            if (now < warningEndTime) return;
+            if (warningText) {
+                warningText.innerText = text;
+                warningText.style.opacity = '1';
+                warningEndTime = now + duration;
+                
+                setTimeout(() => { 
+                    if (currentRun !== runId) return;
+                    if (performance.now() >= warningEndTime && warningText) warningText.style.opacity = '0'; 
+                }, duration);
+            }
+        }
+
+        function getUnlockedEndings() {
+            try { return JSON.parse(localStorage.getItem('secretHandshakeEndings')) || []; } 
+            catch (e) { return []; }
+        }
+        function saveEnding(id) {
+            const list = getUnlockedEndings();
+            if (!list.includes(id)) {
+                list.push(id);
+                localStorage.setItem('secretHandshakeEndings', JSON.stringify(list));
+            }
+        }
+        function saveKeys(count) { localStorage.setItem('secretHandshakeKeys', count.toString()); }
+
+        function renderBadges() {
+            let playerKeys = getSafeStorageNumber('secretHandshakeKeys', 0);
+            const display = document.getElementById('key-display');
+            if(display) display.innerText = `てのひらの鍵: ${playerKeys} 個`;
+            
+            const container = document.getElementById('badge-container');
+            if(!container) return;
+            container.innerHTML = '';
+            const unlocked = getUnlockedEndings();
+
+            for (let i = 1; i <= 10; i++) {
+                const badge = document.createElement('div');
+                badge.className = 'badge';
+                if (unlocked.includes(i)) {
+                    badge.innerText = i === 10 ? '★' : i.toString();
+                    badge.classList.add(i === 10 ? 'unlocked-x' : 'unlocked');
+                } else {
+                    badge.innerText = '🔒';
+                }
+                badge.addEventListener('click', () => {
+                    if (unlocked.includes(i)) replayEnding(i);
+                    else tryUnlockEnding(i);
+                });
+                container.appendChild(badge);
+            }
+        }
+
+        function showTitle() {
+            clearAllTimeouts();
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('title-screen').classList.add('active');
+            renderBadges();
+            stopLoop();
+            stopAudio();
+        }
+
+        function showHowTo() {
+            clearAllTimeouts();
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('how-to-screen').classList.add('active');
+        }
+
+        function showCustomModal(text, isConfirm, onConfirm, hasShare = false, endingId = null) {
+            const modal = document.getElementById('custom-modal');
+            const modalText = document.getElementById('modal-text');
+            const modalBtns = document.getElementById('modal-buttons');
+            modalText.innerHTML = text.replace(/\n/g, '<br>');
+            modalBtns.innerHTML = '';
+            
+            const createBtn = (btnText, onClick) => {
+                const btn = document.createElement('button');
+                btn.className = 'menu-btn';
+                btn.style.height = '45px'; btn.style.fontSize = '16px';
+                btn.style.padding = '0 20px'; 
+                btn.style.width = '180px'; 
+                btn.innerText = btnText;
+                btn.onclick = () => {
+                    modal.classList.remove('active');
+                    if (onClick) onClick();
+                };
+                return btn;
+            };
+            if (isConfirm) {
+                modalBtns.appendChild(createBtn('はい', onConfirm));
+                modalBtns.appendChild(createBtn('いいえ', null));
+            } else {
+                if (hasShare) {
+                    modalBtns.appendChild(createBtn('Xでシェア', () => {
+                        const titleStr = endingTitles[endingId] ? `「${endingTitles[endingId]}」` : "";
+                        const text = `「ゆびさきで秘密を」で、エンディング${endingId}${titleStr}に到達しました！https://lanchangame.github.io/tenohira/`;
+                        const url = encodeURIComponent(window.location.href);
+                        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${url}`, '_blank');
+                        showTitle();
+                    }));
+                }
+                modalBtns.appendChild(createBtn('スタート画面へ', onConfirm));
+            }
+            modal.classList.add('active');
+        }
+
+        function tryUnlockEnding(id) {
+            let playerKeys = getSafeStorageNumber('secretHandshakeKeys', 0);
+            if (id === 10) {
+                showCustomModal('エンディング 10 は鍵で解放できません。\n他の9つのエンディングをすべて解放した状態で、再度プレイして最後までたどり着いてください。', false);
+                return;
+            }
+            if (playerKeys > 0) {
+                showCustomModal(`てのひらの鍵を1つ使って、エンディング ${id} を解放しますか？\n（残り鍵数: ${playerKeys}個）`, true, () => {
+                    playerKeys--; saveKeys(playerKeys); saveEnding(id); renderBadges();
+                    showCustomModal(`エンディング ${id} を解放しました！\nバッジをタップして閲覧できます。`, false);
+                });
+            } else {
+                showCustomModal('てのひらの鍵が足りません。\n同じエンディングに再度到達すると鍵がもらえます。', false);
+            }
+        }
+
+        function getAudioContext() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            return audioCtx;
+        }
+
+        function initAudio() {
+            const ctx = getAudioContext();
+            if (!isAudioGraphBuilt) {
+                const bufferSize = ctx.sampleRate * 2;
+                
+                audioTickleBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const tOutput = audioTickleBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) tOutput[i] = (Math.random() * 2 - 1) * 0.6;
+                
+                audioTickleFilter = ctx.createBiquadFilter(); 
+                audioTickleFilter.type = 'highpass'; 
+                audioTickleFilter.frequency.value = 3000;
+                
+                audioTickleGain = ctx.createGain(); 
+                audioTickleGain.gain.value = 0;
+                
+                audioTickleFilter.connect(audioTickleGain).connect(ctx.destination);
+                
+                isAudioGraphBuilt = true;
+            }
+            if (ctx.state === 'suspended') ctx.resume();
+        }
+
+        function stopAudio() {
+            stopAudioTickle();
+            if (audioCtx && audioCtx.state === 'running') audioCtx.suspend();
+        }
+
+        ['click', 'touchstart'].forEach(evt => {
+            document.addEventListener(evt, () => {
+                const ctx = getAudioContext();
+                if (ctx.state === 'suspended') ctx.resume();
+            }, { passive: true });
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        });
+
+        function replayEnding(id) {
+            clearAllTimeouts();
+            stopLoop();
+            resetGameState();
+            initAudio();
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('game-screen').classList.add('active');
+            activeMsgHandler = advanceText;
+            resizeCanvas(); 
+            drawInstruction.style.display = 'none'; gaugeLabel.style.display = 'none'; gaugeContainer.style.display = 'none';
+            strokeCounter.style.display = 'none'; timeCounter.style.display = 'none'; warningText.style.opacity = '0';
+            finishBtn.style.display = 'none'; choiceOverlay.style.display = 'none';
+            blushOverlay.style.opacity = '0';
+            clearCanvas();
+            let resultText = generateEndingText(id);
+            resultText.unshift(`～エンディング${id}～`);
+            resultText.push("〜 HAPPY END 〜");
+            playText(resultText, () => {
+                nextMark.style.display = 'none'; 
+                showCustomModal(`エンディング${id}を振り返りました。\n思い出をSNSにシェアしますか？`, false, () => showTitle(), true, id);
+            });
+        }
+
+        function evaluateEnding() {
+            let earnedEndingId = 1;
+            const totalDays = dailyData.length;
+            const isAllSuccess = (targetDiff) => choiceHistory.length === totalDays && choiceHistory.every(c => c.diff === targetDiff && c.success);
+            const isAllFail = choiceHistory.length === totalDays && choiceHistory.every(c => !c.success);
+            const unlocked = getUnlockedEndings();
+            const allStandardEndingsUnlocked = [1,2,3,4,5,6,7,8,9].every(id => unlocked.includes(id));
+            
+            if (allStandardEndingsUnlocked && !unlocked.includes(10)) earnedEndingId = 10;
+            else if (isAllFail) earnedEndingId = 9;
+            else if (isAllSuccess(0)) earnedEndingId = 6;
+            else if (isAllSuccess(1)) earnedEndingId = 7;
+            else if (isAllSuccess(2)) earnedEndingId = 8;
+            else {
+                let lowCount = 0, midCount = 0, highCount = 0;
+                choiceHistory.forEach(c => { if (c.diff === 0) lowCount++; else if (c.diff === 1) midCount++; else if (c.diff === 2) highCount++; });
+                let maxDiff = (highCount >= midCount && highCount >= lowCount) ? 2 : (midCount >= lowCount ? 1 : 0);
+                if (maxDiff === 0) earnedEndingId = 1; else if (maxDiff === 1) earnedEndingId = (playerAffection >= 6) ? 3 : 2; else earnedEndingId = (playerAffection >= 10) ? 5 : 4;
+            }
+            let isNew = !unlocked.includes(earnedEndingId);
+            if (isNew) saveEnding(earnedEndingId); 
+            else {
+                let keys = getSafeStorageNumber('secretHandshakeKeys', 0);
+                saveKeys(keys + 1); 
+            }
+            let resultText = generateEndingText(earnedEndingId);
+            resultText.push("〜 HAPPY END 〜");
+            playText(resultText, () => {
+                nextMark.style.display = 'none'; 
+                showCustomModal(`エンディング${earnedEndingId}に到達しました。\n結果をSNSにシェアしますか？`, false, () => showTitle(), true, earnedEndingId);
+            });
+        }
+
+        function gameLoop(timestamp) {
+            if (!isGameLoopRunning) return;
+            
+            if (phase === 'draw') {
+                let dt = Math.min(timestamp - lastTime, 32); 
+                lastTime = timestamp;
+                timeRemaining -= dt;
+                if(timeCounter) timeCounter.innerText = `残り時間: ${Math.max(0, timeRemaining / 1000).toFixed(1)}秒`;
+                
+                tickleGauge = Math.max(0, tickleGauge - (0.01 * dt));
+                
+                if (audioTickleGain) {
+                    audioTickleGain.gain.value = isDrawing ? Math.min(0.05, tickleGauge / 200) : 0;
+                }
+
+                if(gaugeBar) gaugeBar.style.width = Math.min(100, tickleGauge) + '%';
+                if(blushOverlay) blushOverlay.style.opacity = Math.max(0, (tickleGauge - 20) / 80) * 0.55;
+                
+                if (performance.now() >= warningEndTime) {
+                    if (timeRemaining <= 4000) showDynamicWarning("……ふふっ、くすぐったい…", 2000);
+                    else if (tickleGauge >= 90) showDynamicWarning("待って、そこっ…", 1500);
+                    else if (tickleGauge >= 60) showDynamicWarning("ランちゃんっ…！", 1500);
+                    else if (tickleGauge >= 30 && Math.random() < 0.02) showDynamicWarning("くすぐったいぜ…", 1500);
+                }
+                
+                if (timeRemaining <= 0 || tickleGauge >= 100) endDrawPhase(false);
+                
+                if(ctx && canvas) {
+                    ctx.save();
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    ctx.fillStyle = 'rgba(255, 249, 245, 0.05)'; 
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.restore();
+                }
+            } else { 
+                lastTime = timestamp; 
+            }
+            
+            if (isGameLoopRunning) {
+                rafId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', showTitle);
+        
+        const dailyData = [
+            { day: 1, label: "１日目", intro: ["騎士団の仕事が落ち着いている日は、決まってヴェインが夕飯を作りに来てくれる。",
+                                            "彼が作ってくれるご飯も、一緒に過ごす時間も大好きで、そんな日はとても幸せだ。",
+                                            "久しぶりに立て込んだ予定もなく、今日から数日間はこの時間を楽しめそうだ。\nそう考えて、ひそかに胸を躍らせる。", 
+                                            "俺はヴェインのことが好きだ。",
+                                            "ただの幼馴染としてだけじゃなくて、ずっと昔から恋をしている。",
+                                            "優しくておおらかで、貴重な自由時間を割いて俺のために手料理を振る舞ってくれるヴェイン。",
+                                            "そんな人を好きにならない理由なんて、俺には見つからなかった。",
+                                            "…夕食後。\nたわいもないおしゃべりをしながら想いを巡らせる。",
+                                            "俺はヴェインに素敵なものをたくさんもらっているのに、ひとつも返せていないのではないか。\nそんなのは嫌だ。俺もヴェインに何か渡したい。", 
+                                            "そういえば、この前部下に手のツボのマッサージを教えてもらったな。あれならば、俺にもまねできるかもしれない。",
+                                            "ヴェインに提案すると、「じゃあお願いしちゃおっかな！」と、明るい笑顔で答えてくれた。", 
+                                            "ヴェインの手を取る。俺よりもひとまわり大きくて、ゴツゴツした手。",
+                                            "幼い頃はあんなに小さかったのに、みんなを守るためにと努力を重ねた結果だ。\nその事実に、誇らしさがこみ上げた。",
+                                            "大好きな人の手に触れるのはとてもどきどきしたけれど、俺はその気持ちを振り払ってマッサージに集中した。",
+                                            "ヴェインが「なんか効いてる気がするぜ！」と言ってくれて、得意気になる。",
+                                            "…ふと、いたずらを思いついた。小さい頃にやったみたいに、何気ないふりをしててのひらに文字を書いてみよう。\nヴェインは気づいてくれるだろうか。", 
+                                            "ほんの思い付きだが、なんだか楽しそうだ。\n…手始めに、なんと書いてみようか。"], 
+             choices: [{ text: "「あ」", req: 3, reward: 1, diff: 0 }, { text: "「ほし」", req: 5, reward: 2, diff: 1 }, { text: "「ありがとう」", req: 14, reward: 3, diff: 2 }],
+             success: ["「……ランちゃん、ありがとな！すっごい回復した気がするぜ！」", "指先から伝わるヴェインの体温にドキドキする。これはマッサージで、やましいことなんかひとつもないはずなのに。" ,
+                       "俺はなんだか得した気分になりながら、手を離した。", ], 
+             fail: ["「っ、ランちゃん！ くすぐったい！」", "耐えきれなくなったヴェインが、大げさに手を振りほどく。", "「すまないヴェイン、俺の技術もまだまだだな。明日までに勉強しておくよ。」",  "急にてのひらが寂しくなってしまった。…ヴェインの手、温かかったな。", ] },
+            
+            { day: 2, label: "２日目", intro: ["今日は騎士団小隊の合同演習があった。俺は陛下の護衛で参加できなかったので、実質ヴェインが主導した催しだ。",
+                                            "疲れただろうに、今日も俺の家にご飯を作りに来てくれた。",
+                                            "夕食がてら、合同演習の報告を聞く。",
+                                            "エドウィンが3カ月前と比べてすごく成長していたとか、リックが武器を変えてみたらしい、とか。報告書には書かないくらい、些細な話だ。",
+                                            "…ヴェインは昔からよく人を見ている。部下たちの小さな変化にも気付いており感心する。",
+                                            "とてもよくできた副団長だ。俺は誇らしさで胸がいっぱいになった。",
+                                            "そう、ヴェインは本当によく気が付く。",
+                                            "情けないことに俺が疲れ果てて少し無理をしてしまった時も、すぐに心配して助けに来てくれる。\n例外なく、いつも。",
+                                            "そのたびに俺はいちいちドキドキしてしまうのだ。\n俺だけが特別というわけではないとわかっているのに、期待してしまう自分がいる。", 
+                                            "今はこうして団長である俺を献身的に支えてくれているが、もしいつか大事で特別な人ができてしまったら……。",
+                                            "ふと頭をよぎった暗い想像を、軽く首をふってごまかした。", 
+                                            "今日もマッサージをさせてくれないだろうか。昼休みに、例の部下から新しく手のツボを聞きだしたのだ。試したい。",
+                                            "そう思っていると、ヴェインと目が合った。", 
+                                            "「ランちゃん、今日も手のマッサージしてくれる？なんだかいつもよりも柔らかい動きができた気がしてさ～！」",
+                                            "花が咲くような笑顔でお願いされて、胸が高鳴ると同時に、嬉しくなる。",
+                                            "ヴェインが喜んでくれるのも嬉しいし、どさくさに紛れてヴェインの大きな手に触れられるのも嬉しい。\nまさに一石二鳥ってやつだな。",
+                                            "新しく知ったツボを得意気な顔で押しながら考える。\n今日はいたずらになんと書いてみようか。"],
+             choices: [{ text: "「い」", req: 2, reward: 1, diff: 0 }, { text: "「えほん」", req: 7, reward: 2, diff: 1 }, { text: "「おつかれ」", req: 9, reward: 3, diff: 2 }], 
+             success: ["「ランちゃん、今日もありがとなっ！疲れが吹き飛んだぜ！」", "元気いっぱいに感謝を伝えてくれるヴェインを見て、俺の疲れも吹き飛んだ。","手のツボマッサージは結構効くらしい。明日また、新しいツボを教えてもらわないとな。", ],
+             fail: ["「ランちゃん、ちょっとくすぐったいかも…！」", "ヴェインが少し鼻先を赤くして、パッと手を離した。","俺のいたずらはどうやらバレてはいないらしい。","…残念なような、ほっとしたような。明日もマッサージさせてくれるだろうか。", ] },
+            
+            { day: 3, label: "３日目", intro: ["王都のはずれで中級の魔物が出た。\n俺が討伐に向かい倒せはしたものの、接近戦のさなかに仕掛けられた毒攻撃を避けることができなかった。",
+                                            "救護班が控えていたため、すぐに毒抜きをしてもらって軽傷で済んだが、半日は安静にするように厳命された。",
+                                            "無理矢理救護室に寝かされ、そのぶんの俺の仕事はヴェインに回ってしまったようだ。",
+                                            "俺のミスでヴェインの仕事を増やしてしまったことに大きな罪悪感がある。それなのにヴェインは、今日も俺のためにご飯を作りに来てくれた。",
+                                            "心が躍る反面、そんな自分にふがいなさを感じた。",
+                                            "俺がしっかりしていれば、ヴェインに大変な思いをさせなくて済んだのに。",
+                                            "結局俺はヴェインに頼ってばっかりだ。",
+                                            "夕飯は相変わらず最高に美味しかったけれど、今日のヴェインは明らかに口数が少ない。",
+                                            "たまに何か言いたげに俺を見遣るが、その瞳はなんだか暗く見えた。",
+                                            "…怒っているのだろうか。心配をかけてしまった自覚はある。\n恋心を抜きにしても、もしヴェインが毒を受けたと知らせられたらと思うと、俺だってぞっとしてしまう。",
+                                            "魔物から毒を受けてしまった自分のうかつさに嫌気がさす。",
+                                            "せっかくヴェインと一緒にいるのに、今夜はマッサージどころかおしゃべりもできないかもしれないと思うと、それも寂しかった。",
+                                            "ぎこちないまま見送るのも名残惜しく、ヴェインの腕のあたりをじっと見ていると、彼は自然とてのひらを差し出してくれた。", 
+                                            "ヴェインの手を取り、昨日までよりもゆっくりと、気持ちを込めてマッサージをした。\nそして、いつも通りに少しのいたずらをしのばせる…。"],
+             choices: [{ text: "「し」", req: 1, reward: 1, diff: 0 }, { text: "「ゆき」", req: 6, reward: 2, diff: 1 }, { text: "「ごめんな」", req: 11, reward: 3, diff: 2 }],
+             success: ["「……今日はランちゃんの方が大変だったのに、ありがとな。」", "「…いや、すまなかった。お前の仕事を増やしてしまったし…心配をかけてしまった。」","俺の言葉に、ヴェインがおもむろに顔をあげる。少し震えて涙ぐんでいるようだった。","「危険な仕事だって理解してるけどさ。知らせを受けた時に頭の中が真っ白になっちまった。」","「…こんなの慣れっこねえし、やっぱりランちゃんには、ずっと無事でいてほしいぜ。」","痛切な響きを持つヴェインの言葉に、俺はもう一度「すまない」と呟く。","しばらく彼の手を強く握りしめていた。",], 
+             fail: ["「……わ、くすぐったい！」", "ヴェインが大げさにおどけて俺の手を離す。","途端に空気が和らいだのがわかった。きっと、お互いの暗い雰囲気を吹き飛ばすために気を遣ってくれたのだろう。","その後はいつも通りにヴェインとの会話を楽しみながら、俺は絶対にこいつをひとりにはさせないと、改めて強く誓った。",] },
+        
+            { day: 4, label: "４日目", intro: ["今日は陛下とたわいのないお話をさせていただく機会があった。",
+                                            "最近は騎士団の仕事も落ち着いているので、ヴェインが夕飯を作りに来てくれるのだとお話した。",
+                                            "陛下が興味深そうに話してくださるのに感激して、つい饒舌になってしまった。\n特にデザートは格別なんですとお伝えすると、興味を持ってくださった。",
+                                            "明日、ヴェインにお菓子を作ってもらい、3人でお茶会をしないかとご提案いただいた。\nとても光栄なお話だ。陛下もヴェインのお菓子を気に入ってくださるに違いない。",
+                                            "早速ヴェインに伝えると、「うお～、緊張するぜ！でも腕が鳴るな！」と、いい笑顔で答えてくれた。",
+                                            "そうと決まれば今日は試作会だ。お菓子の材料を買い込む手伝いをしながら、役得感に頬が緩む。",
+                                            "「いつもはランちゃん用にかなり甘くしてるけど、陛下に食べていただくならちょっと砂糖を減らさないとな～」",
+                                            "いつも自分のことを想ってくれているのだなと、幸せな気持ちになる。",
+                                            "お茶うけにちょうどいいムースとプチケーキ、クッキーを作り終えたヴェインは、「味見してくれ！」と俺に菓子を差し出した。",
+                                            "「どれも美味いぞ！」と伝えると、「そればっかり！」と言いながらも嬉しそうだ。",
+                                            "ヴェインのお菓子を食べられるうえに、ヴェインの良いところを陛下に知ってもらえると思うと、明日が楽しみで仕方ない。",
+                                            "…ヴェインの良いところをもっとみんなに知ってもらいたいというのは、俺の心からの願いだ。",
+                                            "だが同時に寂しくもある。…きっといつか、俺ばかりに構ってくれることはなくなるだろうから。",
+                                            "いつか訪れるかもしれないその時までは、もうすこしだけヴェインをひとりじめしてしまおう。",
+                                            "目の前に並べられた試作品の数々を眺めながら、俺はひそかにわがままな決意をした。",
+                                            "「明日は頑張らなきゃな！せっかくランちゃんが陛下に自慢してくれたんだし」",
+                                            "ヴェインが優しく俺を見つめて言う。",
+                                            "「いつも愛情こめて作ってるからさ、美味しいって思ってくれて嬉しいぜ」",
+                                            "愛情。ヴェインが発した言葉にドキッとする。\n家族とか、幼馴染とか、親友とか、純粋な気持ちでそう言ってくれているのはわかっているけれど。",
+                                            "そうだ、これから先何があろうと、俺がヴェインの特別ってことに変わりはない。\nいつもお菓子を作ってくれる愛情は、当たり前に受け取っていいものではないんだ。",
+                                            "頬が熱い。\n赤くなった顔を隠すように俯いて、俺は黙ってヴェインの手を取った。\nいつもより入念にマッサージをしながら、てのひらをなぞり始める…。"], 
+             choices: [{ text: "「て」", req: 1, reward: 1, diff: 0 }, { text: "「プリン」", req: 6, reward: 2, diff: 1 }, { text: "「がんばれ」", req: 13, reward: 3, diff: 2 }], 
+             success: ["「……ん。今日もありがとな、ランちゃん！これから明日の下ごしらえするけど、ランちゃんも手伝ってくれるか？」", "「もちろんだ、俺にできることがあったらなんでもさせてくれ！」","…今度は俺がヴェインにお菓子を作ってみようか。きっと下手だけど、ヴェインはしっかり愛情を受け取ってくれるだろう。",], 
+             fail: ["「ランちゃん、くすぐったい！…あのさ、ずっと気になってたんだけど。このマッサージを教えてくれたのって、誰？」", "背を曲げたヴェインから上目遣いに聞かれた。\n「誰って、キースだが…。近衛隊の…。」","唐突な質問に首をかしげながら答えると、ヴェインはハッとして笑う。","「そっか、キースかあ…！俺も感謝しないとな」\n…ヴェインもマッサージを教わりたいのだろうか？",] },
+      
+            { day: 5, label: "５日目", intro: ["陛下と3人のお茶会は大成功だった。ヴェインが作ってくれたお菓子は当然美味しくて、陛下も気に入ってくださった。",
+                                            "次の約束までしていただいて、俺も鼻が高い。",
+                                            "料理長にまでレシピを聞かれ、照れながらも嬉しそうに答えていたヴェインの笑顔が忘れられない。",
+                                            "今日はきっと料理疲れしているだろう。夜は俺がご馳走してやろうと、ヴェインをレストランに誘うと、ヴェインはおどけたように言った。",
+                                            "「ありがと、ランちゃん！でももうビーフシチューの材料買っちまったぜ～。今日も俺にご飯作らせて」",
+                                            "「ビーフシチュー！…いいのか！？ありがとな、ヴェイン！」",
+                                            "俺は目を輝かせた。",
+                                            "…結局今日もヴェインの世話になってしまった。",
+                                            "その後、一緒に作った（俺はほとんど味見しかできていないが）ビーフシチューは絶品だった。",
+                                            "夕食後、今日もマッサージをしようか？と聞くと、ヴェインは一瞬黙った後、ちょっと意地悪な顔をした。",
+                                            "「お願いしようかな。…あのさ、ランちゃんさ、いつもマッサージの時に俺に何か伝えようとしてるよな。いたずらっこだな～」",
+                                            "ヴェインの言葉に、思わず顔を上げる。",
+                                            "…バレてた！俺は恥ずかしさのあまりその場から逃げ出したくなった。",
+                                            "「わかるに決まってるだろ～。真剣な顔でマッサージしてくれてるのに、急にいたずらっ子の表情になるんだもん」",
+                                            "そんな表情をした覚えはないが、聡いヴェインには最初から全てお見通しだったのかもしれない。",
+                                            "「なあ、ランちゃん。俺この数日間、本当に元気をもらってたよ。…今日もてのひらに何を書こうとしてたのか知りたい。教えてくれるか…？」",
+                                            "真剣な表情に気圧される。いたずらがばれたのに、どうやら嫌がってはいないようだった。\n俺はヴェインの向かいの椅子に座り、静かに手をとった。",
+                                            "ヴェインのてのひらに、今日はしっかりと伝わるように。…なんと書こうか。"], 
+             choices: [{ text: "「る」", req: 1, reward: 2, diff: 0 }, { text: "「コスモス」", req: 9, reward: 4, diff: 1 }, { text: "「だいすき」", req: 14, reward: 6, diff: 2 }],
+             success: ["「……ランちゃん、ありがとな。毎日こうやって一緒の時間を過ごせて嬉しい。」", "気恥ずかしさでまともにヴェインの顔を見られない。","ずっと秘密にしておこうと思っていたのに、もう俺の想いはバレバレなのかもしれない。",],
+             fail: ["「……あはは、ランちゃんってばほんとに不器用だなあ…。」", "くすぐったさに反射的に手を離してしまったヴェインが、困ったように笑う。","文字を書き終えられず残念に思う俺を見て、目を細めて優しく微笑んだ。",] }
+        ];
+
+        const endingTitles = {
+            1: "不器用ないたずら",
+            2: "星を見に行く",
+            3: "きいろいコスモス",
+            4: "かわいい嫉妬",
+            5: "これからも、二人三脚",
+            6: "あいしてる",
+            7: "大切な思い出",
+            8: "てのひらに愛を",
+            9: "お前には勝てない！",
+            10: "ゆびさきで秘密を"
+        };
+
+        function generateEndingText(earnedEndingId) {
+            let resultText = ["…沈黙が落ちる。暖炉の薪がバチっと音を立てた。", "ヴェインは自分のてのひらを見つめ……やがて、俺の手をぎゅっと握る。",
+                             ];
+            
+            if (earnedEndingId === 1) { resultText.push("「……なんだろ。…あいうえお？」",
+                                                        "しばらく考えたのち、はっと思いついたかのように顔を上げるヴェインに、思わず吹き出してしまう。",
+                                                        "そりゃそうだ。自分が不器用だとわかっているからこそわざと短い言葉を選んだのに、ヴェインをくすぐったがらせてしまった。",
+                                                        "いたずらは失敗だ。",
+                                                        "「ふふっ、俺もまだまだだな。\nもっといたずらのスキルを磨かなければ 」",
+                                                        "「そんなスキル、磨かなくて大丈夫だぜ～…！」",
+                                                        "これまで幾度も交わした、たわいもない会話。", 
+                                                        "せっかくのチャンスに気持ちを伝えられなかったのは少し残念だが、今回はこれでよかったのかもしれない。",
+                                                        "そうだ、きっとまたこんな時間をヴェインと過ごせるだろう。",
+                                                        "俺はなんだか晴れ晴れとした気持ちだった。\nヴェインだってこのいたずらを心から楽しんでくれているのがわかったから。",
+                                                        "「…なあ、ランちゃん。」",
+                                                        "ヴェインの目がまっすぐに俺を射抜く。\n普段はあまり見ないような真剣な瞳にドキドキした。",
+                                                        "「やっぱり、もう一度…いたずらしてもらってもいいか？やっぱりランちゃんがなんて書こうとしてたか知りたいからさ…」",
+                                                        "ちょっとだけ意地悪な顔で言う。",
+                                                        "「ほんとはなんとなくわかってるよ。でも自信がなくてさ。…いい？」",
+                                                        "からかうような表情なのに、その声色はひどく優しい。",
+                                                        "その言葉に、小さくうなずいてヴェインの手を取る。いつもよりも少し熱い。\n顔を見上げると、耳の先まで真っ赤になっているのが見えた。俺と同じだ。",
+                                                        "てのひらから伝わる熱に、胸の奥もじわりと甘く痺れていく。",
+                                                        "この先の未来、もっと毎日が楽しくなる予感にはにかみながら。",
+                                                        "俺は今度こそちゃんと伝わるように、ゆっくりとヴェインのてのひらをなぞりはじめた…。",
+                ); }
+                
+            else if (earnedEndingId === 2) { resultText.push("「…なんも思いつかない！ねえ、ランちゃん。何を書こうとしてたの？教えて！」",
+                                                             "「…秘密だ」",
+                                                             "ちょっと素っ気なく横を向くと、ヴェインはむっと頬を膨らませた。",
+                                                             "「ええ～、気になるぜ！」",
+                                                             "子どもっぽく拗ねる演技を見て、思わず笑いだす。\nそんな俺につられてかヴェインも笑顔になった。",
+                                                             "昔から、ヴェインとこんなくだらないやり取りをして過ごすのが好きだった。",
+                                                             "かけがえのない時間に目を細める。ヴェインの前だと、いつだって自然体でいられるんだ。",
+                                                             "そんなことを考えていると、不意にヴェインが小さく声を漏らした。",
+                                                             "「なあ、ランちゃんは覚えてるかな。ちょっと懐かしい思い出。\n…昔の俺は今よりもずっと弱虫で、夜が怖くて眠れない日もあっただろ」",
+                                                             "「…覚えてるさ。」",
+                                                             "小さなヴェイン。夜中にひとりきりでいるのを寂しがって、俺と一緒に寝たいと布団にもぐりこんできた。",
+                                                             "声を押し殺して泣くヴェインを、そっと抱きしめたこともある。\n…誰も傷ついてほしくないと、騎士になると誓ったあの日の夜。",
+                                                             "「…それでさ。俺がどうしても眠れなかった日、おじさんやおばさんに気づかれないように、ランちゃんがこっそり外に連れ出してくれたんだ。」",
+                                                             "それも覚えている。\n…静かな夜だった。",
+                                                             "ヴェインは心配そうな顔で俺のてのひらを握っていた。\n震える手を引いて、一緒に夜空を見上げ、一晩中星座を探した。",
+                                                             "「…あの時さ。星が綺麗だっただけじゃなくて、ランちゃんが隣にいてくれたから、俺は幸せだったよ」",
+                                                             "あの頃、純粋な愛情で幾度となく握った手。",
+                                                             "…マッサージなんて口実を作らなければ、気軽に触れられなくなってしまった。",
+                                                             "「…今も幸せか？」",
+                                                             "何気ないふりをして聞く。",
+                                                             "ヴェインは一瞬だけ逡巡し…困ったように笑った。",
+                                                             "「…うん。」",
+                                                             "しばらく黙ってから、俺は立ち上がり、てのひらを差し出した。",
+                                                            "「なあヴェイン、星を見に行こう」",
+                                                             "「…うん！」",
+                                                             "ヴェインが力強く俺の手をとる。\n握った手から熱が伝わってくる。",
+                                                            "かたく繋いだてのひらは、きっといつまでも離れることはない。",
+                                                            ); }
+           
+            else if (earnedEndingId === 3) { resultText.push("「…村にいたころさ。よく一緒にお花を育ててたよな。」",
+                                                             "幼い頃の思い出を綴っていたのがわかったのか、ヴェインは穏やかな笑みを浮かべて言った。",
+                                                             "もちろん覚えている。",
+                                                             "もっとも、自分で花壇を作って一生懸命に世話をしていたのはヴェインで、俺は時々水やりを手伝うくらいだったが。",
+                                                             "「秋にはきいろいコスモスを育てたんだ。」",
+                                                             "「…ランちゃんが、俺の髪の色みたいで好きだって言ってくれたから。」", 
+                                                             "少しオレンジがかったきいろの花に、薄い緑の葉。",
+                                                             "ヴェインによく似ていると、ひと目で大好きになった花だ。",
+                                                             "ふたりで小遣いを貯めて、村はずれの花屋に種を買いに行った。\n芽が出た日は大喜びして、何度も花壇をのぞき込んだっけ。",
+                                                             "「ランちゃんが毎日、俺の庭まで様子を見に来てくれるのもすごく嬉しかったんだ。\n…でもさ。」",
+                                                             "少し間を置いて、呟く。",
+                                                             "「…育ってたのは、コスモスだけじゃないんだ。」",
+                                                             "ふと、握ったままのヴェインの手が、かすかに震えているのに気が付いた。",
+                                                             "「なあ、ランスロット。きいろいコスモスの花言葉、知ってる…？」",
+                                                             "ヴェインの問いかけに、俺は緩く首を横に振る。",
+                                                             "「きいろいコスモスの花言葉はね…幼い恋心、なんだよ」",
+                                                             "息をのむ。逃げ場のない真剣な眼差しに射止められ、動けなくなる。。", 
+                                                             "長い沈黙の後、どちらからともなく顔を寄せて…。",
+                                                             "幼いころから、ずっと大切に育てていた想いを胸に…",
+                                                             "俺たちは初めて口づけを交わした。"
+                ); }
+            
+            else if (earnedEndingId === 4) { resultText.push("「…ねえ、ランちゃん。手のマッサージを教えてもらったって言ってたよな。…こんなふうに手を握ったの…？」",
+                                                             "ヴェインが上目遣いで俺に問う。\nあまりにも真剣そうな瞳に、俺は思わず吹き出してしまった。", 
+                                                             "「なんで笑うんだよお…」",
+                                                             "しゅんとうなだれる姿に、笑いながら答える。",
+                                                             "「…いや、真剣に何を気にしているんだと思ってな」",
+                                                             "ヴェインはむっとした表情で、俺の指先をぎゅっと握り込んだ。",
+                                                             "「だ、だって気になるだろ…、俺以外にも、こんなふうに触ったのかな、とか、」",
+                                                             "「…嫉妬か？」",
+                                                             "ふと浮かんだ言葉を、ためらいながらも口に出す。\nからかうように言ったつもりだったのに、声が震えてしまった。",
+                                                             "…ばかみたいだ。",
+                                                             "ヴェインは耳まで赤くしてしばらく茫然としていたが、おそるおそる俺の指先をなぞり、絞り出すように呟いた。",
+                                                             "「…そりゃ、するだろ。…ランちゃん。」",
+                                                             "「好きな人が他の誰かに触られてるのは嫌だよ」", 
+                                                             "まっすぐに突き付けられた独占欲。\nあまりのことに、思わず呼吸が止まってしまう。",
+                                                             "「ち、違う、ただのマッサージで、手を握ってもらうなんて、」",
+                                                             "しどろもどろに否定する俺を見て、ヴェインは口を尖らせた。",
+                                                             "「マッサージはまだいいけどさ。てのひらをなぞって文字書くやつとか。\nなんか俺変な気持ちになったし、他の奴にやってたら嫌だなって思った」",
+                                                             "「そ、そんなの、お前にしかやらないに決まってるだろ！」",
+                                                             "思わず口をついて出た言葉。ヴェインは一瞬目を丸くした後、にっこりと笑った。",
+                                                             "「ランちゃん、それってどういう意味～？」",
+                                                             "…俺はびくりと後ずさり、てのひらで顔を隠しながら、叫ぶように言う。",
+                                                             "「ヴェインが大好きってことだよ！」",
+                                                             "ヴェインの顔がパッと明るくなる。",
+                                                             "俺たちの間には、もう隠しきれない想いが溢れていた。",
+                );}
+            
+            else if (earnedEndingId === 5) { resultText.push("「ここ最近、毎日ランちゃんと過ごせてすごく楽しかった。\nてのひらを触ってもらって、昔を思い出してなんか安心したし…」",
+                                                             "ヴェインは穏やかな笑顔を浮かべて俺を見つめる。",
+                                                             " 「ランちゃんがてのひらに書いてくれた言葉、全部分かったわけじゃないけどさ、きっといつも俺を励ましてくれてたんだよな」", 
+                                                             "伝わっていたことが嬉しくて、俺は思わず顔をほころばせた。",
+                                                             "「それに、言葉にしなくたって。昔からずっと…雰囲気とか表情で伝わるものが俺とランちゃんとの間にはあるだろ」", 
+                                                             "「もちろんだ、ヴェイン。そんなお前がいてくれるからこそ、俺は迷わずに前を向けるんだよ」",
+                                                             "「本当か！？俺、ランちゃんの役に立ててたんだな。へへ、嬉しい…。」",
+                                                             "「ああ、ヴェイン。だから…これから先もずっと、側にいてくれるか？」", 
+                                                             "眠れない夜があった。\nヴェインがいつか俺のもとを離れたらと、不安になった日。",
+                                                             "明るくて優しくて誰にでも好かれる彼が、自分だけのものにならないかと夢想して、自己嫌悪に陥ったことを覚えている。",
+                                                             "溶けるような眼差しを俺に向けるヴェインに、あの時は言えなかった言葉を投げかけた。",
+                                                             "「…ランスロット。それってなんだかプロポーズみたいだ！」",
+                                                             "ヴェインは喜色満面で、握ったままだった俺の腕をぶんぶんと上下に振る。",
+                                                             "「…そのつもりだ」",
+                                                             "ヴェインは破顔し、俺を抱き寄せて頬に小さく唇を落とした。",
+                                                             "この先ずっと俺の隣にはヴェインがいる。\n大変なことはたくさんあるだろうが、支え合って生きていく。",
+                                                             "ヴェインと二人三脚なら、なんだってできる気がした。",
+                                                             "俺を抱きしめるたくましい腕に頼もしさを感じながら、俺はゆっくりと目を閉じた。",
+                                                            ); }
+            
+            else if (earnedEndingId === 6) { resultText.push("「…ランちゃん、俺わかっちゃったかも。\nでも、せっかくならランちゃんから答えを聞きたいな、なんて…。」", 
+                                                             "遠慮がちにヴェインが言う。\nしかし、目じりが下がって口元も緩み、その表情はどこか締まりがないように見える。",
+                                                             "俺はもう、顔から火が出てしまいそうだった。",
+                                                             "…だって、俺がヴェインのてのひらに綴っていたのは、直球の愛の言葉。",
+                                                             "１日に１文字ずつなら気づかれないだろうと…大胆にも…あ、い、し、て、る、と伝えたのだ。",
+                                                             "どうしよう、ごまかしてしまおうか。",
+                                                             "今ごまかしてしまえば、仲の良い幼馴染として、明日からもずっと歩んでいけるだろう。",
+                                                             "だが、もし…もしヴェインも、俺と同じように、この関係を少し変えたいと思ってくれているのならば、俺は大きなチャンスを逃すことになってしまう。",
+                                                             "おそるおそるヴェインを見上げると、不安そうに揺れるエメラルドグリーンの瞳と目が合った。",
+                                                             "…ああ。少しでもお前を不安にさせてしまうなんて、俺はなんて臆病なんだ。",
+                                                             "「愛してる、だよ。俺がずっと、お前に伝えたかった言葉だ」",
+                                                             "俺は覚悟を決めて、ヴェインの目をしっかりと見て伝えた。確実に俺の想いが届くように。",
+                                                             "途端、ヴェインの表情がぱあっと明るくなる。きらきらと星の降るような笑顔。俺の大好きな顔。",
+                                                             "「俺も…俺も愛してるぜ、ランちゃん！」",
+                                                             "心がじんわりとあたたかくなり、歓喜で胸がふるえた。",
+                                                             "目頭が熱くなるのを感じる。",
+                                                             "…だめだ。\nヴェインの前では泣きたくない。\nまた不安にさせてしまう…",
+                                                             "涙がこぼれそうになるのを必死に抑えていると、ヴェインは大きな指で俺の目じりをそっと拭ってくれた。",
+                                                             "「なあ、ランちゃん。明日からも毎日教えてくれる？\nてのひらじゃなくて、俺の目を見て言ってよ」",
+                                                             "腕を広げてヴェインが言う。俺はもうためらわずに、その胸に飛び込んだ。",
+                                                            ); }
+            
+            else if (earnedEndingId === 7) { resultText.push("「ランちゃんがてのひらに書いてくれる言葉、すごく懐かしいものばかりだった。」",
+                                                             "ヴェインは俺のてのひらを広げ、愛おしそうになぞりながら言う。",
+                                                             "「星を見に行ったり、絵本を読んだり、お花を育てたり、雪で遊んだり。」",
+                                                             "「…俺がはじめて作ったお菓子は、プリンだったな。\nランちゃんが大好物だって言うからさ、どうしても喜んでほしくてばあちゃんに頼み込んだんだ。」",
+                                                             "「毎日、毎日…。楽しかった。\nこの５日間、村で一緒に過ごしてたときのことを…\n小っちゃかった頃の俺とランちゃんを思い出してたんだ」",
+                                                             "「全部今の俺を形づくってる…\nこの世でいちばん大切な宝物だよ」",
+                                                             "しみじみと言うヴェインに、涙が出そうになる。",
+                                                             "「俺もだ。ヴェインとの思い出は、どれもあたたかくてきれいなものばかりだから」",
+                                                             "ヴェインは少し照れたように眉尻を下げる。",
+                                                             "「昔からずっと俺の隣にはランちゃんがいてくれたよな。\n泣き虫だったころの俺の手を引いてくれたのは、いつだってランちゃんだった」",
+                                                             "ゆっくりとてのひらをなぞられ、指を絡ませられる。…これは、恋人つなぎってやつじゃないのか！？",
+                                                            "どきどきする俺をよそに、ヴェインはうっとりと俺を見つめて言った。",
+                                                            "「思い出が増えるたび…\nランちゃんのことを知るたびに、どんどん好きになっちまう」",
+                                                            "「思い出の中のランちゃんのことも大好きだけどさ。\nこれからの未来のランちゃんのことは、もっと大好きになる自信があるぜ」",
+                                                            "「ヴェイン…」",
+                                                            "ぎゅっと握られたてのひらが熱い。",
+                                                            "「手を引いてもらってばかりじゃなくて、今度は俺もランちゃんを引っ張っていくから。」",
+                                                            "「ずっと隣で、新しい思い出を作っていこうな」",
+                                                            "俺は静かにうなずいて、ヴェインのてのひらを握り返した。",
+                                                            ); }
+            
+            else if (earnedEndingId === 8) { resultText.push("「へへ、ランちゃん、俺も大好きだよ」",
+                                                             "照れたように言うヴェインを見て、心がぽかぽかと暖かくなるのを感じる。", 
+                                                             "幼馴染として、ヴェインが俺のことを大好きでいてくれているのはわかっている。\nこれは絶対にうぬぼれではない。",
+                                                             "俺だって、恋心を抜きにしてもヴェインのことが大好きだ。\nそれをあらためて伝えられたことが嬉しかった。",
+                                                             "「…ランちゃん、不器用なのにさ。\n毎日一生懸命マッサージしてくれて、俺に気持ちを伝えてくれてありがとな」",
+                                                             "ヴェインは自分のてのひらを開き、しばらく見つめた後で、ふいに軽く口づけを落とした。",
+                                                             "俺が文字を綴り続けたその場所に、そっと。",
+                                                             "色っぽい仕草に見とれながら惚けていると、ヴェインは俺のてのひらを持ち上げ、同じように小さなキスを落とす",
+                                                             "「てのひらに愛をもらってるみたいだった」",
+                                                             "見上げたヴェインの瞳はどこまでも深く、甘い情熱を帯びていた。",
+                                                            " 「それは、幼馴染の親友として、」",
+                                                             "大きな期待感から、つい声がうわずってしまう。",
+                                                             "「えぇ～、いまさら！？…てのひらに文字を書いてたときのランちゃんの顔、幼馴染で親友、って感じじゃなかったけど…」",
+                                                             "さきほどのキザな雰囲気はどこへやら、ヴェインは少ししょぼんとして言った。",
+                                                             "その頭に犬の耳が見えたような気がして、小さく笑う。",
+                                                             "「ふふっ…、そうだな、また手を貸してくれるか」",
+                                                             "素直に差し出されたてのひらに、ありったけの想いを込めて。",
+                                                             "自分の気持ちを確認するように、しっかりと。俺は文字を書き始めた…。",
+                                                            ); }
+            
+            else if (earnedEndingId === 9) { resultText.push("「……う～ん、なんだろ。」",
+                                                             "ヴェインは熟考していたようだが、俺が何を伝えようとしていたかは結局わからないらしい。",
+                                                             "気持ちを伝えるせっかくの機会を逃してしまった自分の不器用さに辟易する。",
+                                                             "もしかしたら…とほんの少し期待を持ってしまったぶん、ちょっとがっかりした。",
+                                                             "しゅんとなってしまった俺の気配をすぐに察知したのか、ヴェインは小さく笑うと、優しく手を差し出してきた。",
+                                                             "「ランちゃんがなんて書いたかはわかんなかったけどさ。…お前の表情とか、一生懸命何か伝えてくれようとしてるとことか見てると…ちょっと期待しちまう」",
+                                                             "俺の手を取り、椅子から降りて跪くヴェインに、頭の中が疑問符でいっぱいになる。\n目の前で起こっていることに感情が追い付かない。",
+                                                             "…次の瞬間。",
+                                                            "ヴェインは俺の手をそっと持ち上げ、そのまま口づけを落とした。",
+                                                            "「ランちゃん…ランスロット。ずっと前から大好きだよ。」",
+                                                            "「俺の作ったご飯を美味しそうに食べてくれるのを見るたびにさ、幸せでたまらなくなるんだ」",
+                                                            "あまりのことにびっくりして、俺は椅子から崩れ落ちそうになった。\nそんな俺の体を、鍛え上げた筋肉でいともたやすく受け止める。",
+                                                            "「…おっ、お前、どこでそんなの覚えてくるんだ！」\n俺は顔どころか全身を真っ赤に染めて、ようやく絞り出すように言った。",
+                                                            "「えっと、恥ずかしいんだけど…。いつかランちゃんに伝えようと思って、ずっと想像してたから…。」",
+                                                            "ヴェインの言葉に、既に沸騰していた頭が爆発しそうになる。",
+                                                            "…こんな夢みたいなことが起こっていいのか？いや、もしかしたら本当に夢なのかも…。",
+                                                            "俺がぐるぐるしていると、「おーい、ランちゃん」と声をかけられた。",
+                                                            "「なあ、教えてランちゃん。てのひらに書くんじゃなくて、ランちゃんの声でさ…。」",
+                                                            "相変わらず余裕な態度を取ろうとするヴェインの声が、少しだけ不安そうに揺れているのに気づく。",
+                                                            "少しでもヴェインを不安にさせるなんていやだ。俺は即座にヴェインに抱き着いて、ずっと秘めていた言葉を今度こそ口にする。",
+                                                            "「俺だってヴェインのことが大好きだぞ！…ずっと昔から大好きだ！」",
+                );}
+                
+            else if (earnedEndingId === 10) { resultText.push("「…なあ、ランちゃん。俺の人生にはさ、全部のページにランちゃんがいるんだよ」",
+                                                              "少しの間を置いて、ヴェインは静かな声で語り始めた。",
+                                                              "「嬉しいこととか悲しいこととかいっぱいあるけど、全部ランちゃんと一緒の思い出なんだ。\nランちゃんが一緒に喜んだり、側にいてくれたりしたからだよ」",
+                                                              "ヴェインの言葉にしみじみとうなずく。\n「俺の人生のページもヴェインでいっぱいだ」",
+                                                              "「この5日間だってそうだ。この5日間、俺すごく幸せだったよ。\n毒を浴びてきた日は元気な姿を見て安心したし、陛下のお茶会のこと考えるのもすごく楽しかった」",
+                                                              "「…ランちゃんの手に触れて…マッサージしてもらう時間も、毎日楽しみだったんだぜ」",
+                                                              "ヴェインがしみじみと語るのを見て、鼓動が高まるのを感じる。\n…だって、俺もヴェインと全く同じ気持ちなんだ。", 
+                                                              "「…それでさ、ランちゃん。最近毎日夢を見るんだ。ランちゃんと一緒に晩御飯を食べてさ、その日にあったことをお話する夢。…いつも寝る前に反芻してたからかな。」",
+                                                              "矢継ぎ早にヴェインが言う。",
+                                                              "「夢の中では、なぜか俺はランちゃんになっていて、毎日ドキドキしながらてのひらに文字を書くんだ。」",
+                                                              "「小さい頃の思い出とか、俺への励ましとか。…俺のことを愛してる、とか」",
+                                                              "息が止まりそうになった。…俺もまるきり同じ夢を見ていたのだ。",
+                                                              "俺の場合はヴェイン視点で、毎日手を触れられるのを楽しみにしながら、腕によりをかけてご飯を作る。",
+                                                              "「こんな夢、偶然とは思えないんだ。俺はいつもそんなに夢を見るタイプじゃねえし、ましてや自分以外から見た夢なんて見たことない。」",
+                                                              "ヴェインは照れたように笑いながら、それでも真っ直ぐに俺を見つめる。…きっと真っ赤でみっともないことになっている俺を。",
+                                                              "「なあ、ランちゃん。俺が見たどの夢でも、俺たちは幸せそうだったよ！」",
+                                                              "満開の向日葵のような笑顔だった。",
+                                                              "…その瞬間。\nずっと胸の奥に秘めていた言葉が、堰を切ったようにあふれ出す。",
+                                                              "「ヴェイン、俺はお前が大好きだ！」",
+                                                              "ヴェインは一瞬目を丸くして、全身で答えるように、俺の体に力強く抱き着いた。",
+                                                              "…そうしてまた、俺たちの人生に新しい１ページが刻まれる。",
+                                                              "これから先も、ずっと隣で笑い合いたい…そんな願いと希望が込められた、特別な1ページだ。",
+                                                              "今回の出来事が一体何だったのか、本当のところはわからない。",
+                                                              "けれど…",
+                                                              "ゆびさきでこっそりと綴っていた秘密は、この先何度だってヴェインと確かめ合う愛になる。",
+                                                              "Thank you for playing!",
+                ); }
+            
+            resultText.push(`【ED ${earnedEndingId}: ${endingTitles[earnedEndingId]}】`);
+            return resultText;
+        }
+    </script>
+</body>
+</html>
