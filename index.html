@@ -822,7 +822,7 @@
                 if (hasShare) {
                     modalBtns.appendChild(createBtn('Xでシェア', () => {
                         const titleStr = endingTitles[endingId] ? `「${endingTitles[endingId]}」` : "";
-                        const text = `「ゆびさきで秘密を」で、エンディング${endingId}${titleStr}に到達しました！https://lanchangame.github.io/tenohira/`;
+                        const text = `「ゆびさきで秘密を」で、エンディング${endingId}${titleStr}に到達しました！https://lanchangame.github.io/tenohira/　#ゆびさきで秘密を`;
                         const url = encodeURIComponent(window.location.href);
                         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${url}`, '_blank');
                         showTitle();
